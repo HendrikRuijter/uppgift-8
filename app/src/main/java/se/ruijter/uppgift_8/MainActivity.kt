@@ -35,6 +35,7 @@ import se.ruijter.uppgift_8.ui.theme.Uppgift8Theme
  * 1. Lägg till tre knappar som väljer tre olika bilder med text du lagt till i projektet.
  * 2. Visa texten från bilden på skärmen.
  * 3. Publicera på github och ange länk nedan.
+ * https://github.com/HendrikRuijter/uppgift-8
  */
 
 class MainActivity : ComponentActivity() {
