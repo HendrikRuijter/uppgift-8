@@ -6,5 +6,7 @@
     <string name="second_image_button">Process image two</string>
     <string name="third_image_button">Process image three</string>
     <string name="empty_string"></string>
+    <string name="empty_message">No text found in image.</string>
+    <string name="configure_message">Configure the recognizer client.</string>
     <string name="total_confidence">Total confidence: </string>
 </resources>

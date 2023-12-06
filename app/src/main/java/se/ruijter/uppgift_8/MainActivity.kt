@@ -102,7 +102,7 @@ fun TextRecognizer(
             }
             Button(onClick = {
                     composableScope.launch {
-                        TextRecognitionInImage.recognizeTextInImage(context.resources, R.drawable.allt)
+                        TextRecognitionInImage.recognizeTextInImage(context, R.drawable.allt)
                     }
                 },
                 enabled = textRecognitionUiState.enableProcessing
@@ -111,7 +111,7 @@ fun TextRecognizer(
             }
             Button(onClick = {
                     composableScope.launch {
-                        TextRecognitionInImage.recognizeTextInImage(context.resources, R.drawable.choklad)
+                        TextRecognitionInImage.recognizeTextInImage(context, R.drawable.choklad)
                     }
                 },
                 enabled = textRecognitionUiState.enableProcessing
@@ -120,7 +120,7 @@ fun TextRecognizer(
             }
             Button(onClick = {
                     composableScope.launch {
-                        TextRecognitionInImage.recognizeTextInImage(context.resources, R.drawable.sned)
+                        TextRecognitionInImage.recognizeTextInImage(context, R.drawable.regbil)
                     }
                 },
                 enabled = textRecognitionUiState.enableProcessing
