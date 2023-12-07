@@ -94,9 +94,8 @@ fun TextRecognizer(
             )
             OutlinedButton(
                 onClick = {
-                    TextRecognitionInImage.resetState()
+                    TextRecognitionInImage.resetState(enable = true)
                 },
-                enabled = textRecognitionUiState.enableProcessing
             ) {
                 Text(stringResource(id = R.string.reset_button))
             }
@@ -137,7 +136,8 @@ fun TextRecognizerPreview() {
     Uppgift8Theme {
         TextRecognizer(
             context = LocalContext.current,
-            modifier = Modifier
+            modifier = Modifier,
+            // https://developer.android.com/jetpack/compose/tooling/previews#preview-viewmodel
         )
     }
 }
