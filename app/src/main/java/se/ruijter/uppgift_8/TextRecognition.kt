@@ -14,12 +14,15 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import se.ruijter.uppgift_8.TextRecognitionInImage.uiState
 
 /**
  * The view model state
  *
- * Business logic produces processing state to update the UI
+ * https://developer.android.com/topic/architecture
+ * In the Unidirectional Data Flow (UDF) pattern, state flows in only one direction.
+ * The events that modify the data flow in the opposite direction.
+ *
  *
  * @property enableProcessing UI state to enable and disable buttons during processing
  * @property textElements A list of all elements (words)
@@ -35,36 +38,21 @@ data class ParsedTextInImage(
 )
 
 /**
- * The text recognition processing singleton
+ * The text recognition processing singleton is the data model
  *
  * Uses the ML Kit text recognition model to find latin text in an image
  *
- * @property uiState Exposed to the UI to change state when the state is updated
  * @property recognizer The client to use the ML Kit text recognition model
  *
  */
-object TextRecognitionInImage: ViewModel() {
-    private val _uiState = MutableStateFlow(ParsedTextInImage())
-    val uiState: StateFlow<ParsedTextInImage> = _uiState.asStateFlow()
-
-    /**
-     * Resets the UI state and enables or disables buttons
-     *
-     * @param enable Buttons enabled (true) or disabled during processing (false)
-     * @return _uiState New uiState content to dispatch
-     *
-     */
-    fun resetState(enable: Boolean = true) {
-        _uiState.value = ParsedTextInImage(enableProcessing = enable)
-    }
-
-    private const val logTag: String = "TextRecognitionInImage"
+object TextRecognitionDataModel {
+    private const val logTag: String = "TextRecognitionDataModel"
     private lateinit var recognizer: TextRecognizer
 
     /**
      * Initializes the text recognition model client once
      *
-     * @param context The composable context
+     * @param context The base context
      * @return Configure a text recognition client in singleton
      */
     private fun configure(context: Context) {
@@ -76,16 +64,12 @@ object TextRecognitionInImage: ViewModel() {
     /**
      * Processes an image registered as a drawable in the project
      *
-     * @param context The composable context
-     * @param imageId The resource id of a project image
+     * @param context The base context
+     * @param image The image to process
      *
      */
-    fun recognizeTextInImage(context: Context, imageId: Int) {
-        resetState(enable = false)
-        val imageDataResources: Resources = context.resources
-        val selectedImage = BitmapFactory.decodeResource(imageDataResources, imageId)
-        val image = InputImage.fromBitmap(selectedImage, 0)
-        if (! TextRecognitionInImage::recognizer.isInitialized) {
+    fun recognizeTextInImage(context: Context, image: InputImage) {
+        if (! TextRecognitionDataModel::recognizer.isInitialized) {
             configure(context)
         }
         processImage(context, image)
@@ -123,7 +107,7 @@ object TextRecognitionInImage: ViewModel() {
      *
      * @param context The composable context
      * @param texts The text recognizer segments text into blocks, lines, elements and symbols
-     * @return _uiState New uiState content to dispatch
+     * @return updateState New ParsedTextInImage property to dispatch by callback
      *
      */
     private fun parseTextRecognitionResult(context: Context, texts: Text) {
@@ -135,7 +119,9 @@ object TextRecognitionInImage: ViewModel() {
         if (blocks.isEmpty()) {
             val emptyMsg = getString(context, R.string.empty_message)
             Log.i(logTag, emptyMsg)
-            _uiState.value = ParsedTextInImage(textElements = listOf(emptyMsg))
+            TextRecognitionInImage.updateState(
+                ParsedTextInImage(textElements = listOf(emptyMsg))
+            )
         } else {
             for (block in blocks) {
                 val lines: List<Text.Line> = block.lines
@@ -150,17 +136,70 @@ object TextRecognitionInImage: ViewModel() {
                     blockConfidence = elements.map {
                         it.confidence
                     }.fold(1.0) {total, value -> total * value}.toDouble()
-
-                    // Log.i(logTag, parsedText.textElements.toString())
-                    // Log.i(logTag, parsedText.elementConfidence.toString())
                 }
             }
-            _uiState.update { currentState -> currentState.copy(
-                enableProcessing = true,
-                textElements = textContent,
-                elementConfidence = textConfidence,
-                totalConfidence = blockConfidence.round(),
-            ) }
+            TextRecognitionInImage.updateState(
+                ParsedTextInImage(
+                    enableProcessing = true,
+                    textElements = textContent,
+                    elementConfidence = textConfidence,
+                    totalConfidence = blockConfidence.round(),
+                )
+            )
         }
+    }
+}
+
+/**
+ * The text recognition processing singleton in the view model
+ *
+ * Uses the view model architecture
+ * https://developer.android.com/topic/libraries/architecture/viewmodel
+ *
+ * @property uiState Exposed to the UI to change state when the state is updated
+ *
+ */
+object TextRecognitionInImage: ViewModel() {
+    private val _uiState = MutableStateFlow(ParsedTextInImage())
+    val uiState: StateFlow<ParsedTextInImage> = _uiState.asStateFlow()
+
+    /**
+     * Resets the UI state and enables or disables buttons
+     * State handler
+     *
+     * @param enable Buttons enabled (true) or disabled during processing (false)
+     * @return _uiState New uiState content to dispatch
+     *
+     */
+    fun resetState(enable: Boolean = false) {
+        _uiState.value = ParsedTextInImage(enableProcessing = enable)
+    }
+
+    /**
+     * Updates the UI state since a listener cannot return the state
+     * State handler
+     *
+     * @param newState The new view model state in the UI
+     * @return _uiState New uiState content to dispatch
+     *
+     */
+    fun updateState(newState: ParsedTextInImage) {
+        _uiState.value = newState
+    }
+
+    /**
+     * Processes an image registered as a drawable in the project
+     * Event handler
+     *
+     * @param context The composable context
+     * @param imageId The resource id of a project image
+     *
+     */
+    fun recognizeTextInImage(context: Context, imageId: Int) {
+        resetState()
+        val imageDataResources: Resources = context.resources
+        val selectedImage = BitmapFactory.decodeResource(imageDataResources, imageId)
+        val image = InputImage.fromBitmap(selectedImage, 0)
+        TextRecognitionDataModel.recognizeTextInImage(context, image)
     }
 }
